@@ -802,231 +802,165 @@
   }
 </script>
 
-<!-- ── CHATBOT ───────────────────────────────────────────────────────── -->
+<!-- ── CHATBOT IA (Groq + Llama) ─────────────────────────────────────── -->
 <style>
+  /* Botón flotante */
   #chat-btn {
-    position: fixed;
-    bottom: 28px; right: 28px;
-    width: 60px; height: 60px;
+    position: fixed; bottom: 28px; right: 28px; z-index: 1000;
+    width: 60px; height: 60px; border-radius: 50%; border: none; cursor: pointer;
     background: linear-gradient(135deg, #008556, #6CB741);
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
-    box-shadow: 0 4px 20px rgba(0,133,86,0.4);
+    box-shadow: 0 4px 20px rgba(0,133,86,0.45);
     display: flex; align-items: center; justify-content: center;
-    z-index: 1000;
-    transition: transform 0.3s, box-shadow 0.3s;
+    transition: transform 0.25s, box-shadow 0.25s;
   }
-  #chat-btn:hover { transform: scale(1.1); box-shadow: 0 6px 28px rgba(0,133,86,0.5); }
+  #chat-btn:hover { transform: scale(1.1); box-shadow: 0 6px 28px rgba(0,133,86,0.55); }
   #chat-btn svg { width: 28px; height: 28px; }
 
+  /* Burbuja de bienvenida */
   #chat-bubble {
-    position: fixed;
-    bottom: 100px; right: 28px;
-    background: #008556;
-    color: white;
-    padding: 8px 14px;
-    border-radius: 20px 20px 4px 20px;
-    font-family: 'Geologica', sans-serif;
-    font-size: 0.82rem;
+    position: fixed; bottom: 100px; right: 28px; z-index: 999;
+    background: #008556; color: white;
+    padding: 8px 14px; border-radius: 20px 20px 4px 20px;
+    font-family: 'Geologica', sans-serif; font-size: 0.82rem;
     box-shadow: 0 4px 16px rgba(0,133,86,0.3);
-    z-index: 999;
-    opacity: 1;
-    transition: opacity 0.5s;
-    pointer-events: none;
+    pointer-events: none; transition: opacity 0.5s;
   }
 
+  /* Ventana del chat */
   #chat-window {
-    position: fixed;
-    bottom: 100px; right: 28px;
-    width: 360px;
-    max-height: 520px;
-    background: white;
-    border-radius: 20px;
+    position: fixed; bottom: 100px; right: 28px; z-index: 1000;
+    width: 360px; max-height: 520px;
+    background: white; border-radius: 20px; overflow: hidden;
     box-shadow: 0 8px 40px rgba(0,0,0,0.15);
-    display: none;
-    flex-direction: column;
-    z-index: 1000;
-    overflow: hidden;
-    animation: slideUp 0.3s ease;
+    display: none; flex-direction: column;
+    animation: vaSlideUp 0.28s ease;
   }
   #chat-window.open { display: flex; }
-
-  @keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
+  @keyframes vaSlideUp {
+    from { opacity: 0; transform: translateY(16px); }
     to   { opacity: 1; transform: translateY(0); }
   }
 
+  /* Header */
   .chat-header {
-    background: linear-gradient(135deg, #004d30, #008556);
-    padding: 16px 18px;
-    display: flex; align-items: center; gap: 12px;
-    position: relative;
+    background: linear-gradient(140deg, #004d30 0%, #00613e 50%, #008556 100%);
+    padding: 14px 16px; display: flex; align-items: center; gap: 12px;
   }
   .chat-header-avatar {
-    width: 40px; height: 40px;
+    width: 40px; height: 40px; border-radius: 50%;
     background: rgba(255,255,255,0.15);
-    border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.2rem;
-    flex-shrink: 0;
+    font-size: 1.2rem; flex-shrink: 0;
   }
   .chat-header-info { flex: 1; }
   .chat-header-name {
-    font-family: 'Days One', sans-serif;
-    font-size: 0.95rem;
-    color: white;
-    line-height: 1;
+    font-family: 'Days One', sans-serif; font-size: 0.95rem;
+    color: white; line-height: 1;
   }
   .chat-header-status {
-    font-family: 'Geologica', sans-serif;
-    font-size: 0.72rem;
-    color: rgba(255,255,255,0.65);
-    margin-top: 3px;
+    font-family: 'Geologica', sans-serif; font-size: 0.72rem;
+    color: rgba(255,255,255,0.65); margin-top: 3px;
     display: flex; align-items: center; gap: 5px;
   }
   .chat-header-status::before {
-    content: '';
-    width: 7px; height: 7px;
-    background: #B1CF4D;
-    border-radius: 50%;
-    display: inline-block;
+    content: ''; width: 7px; height: 7px;
+    background: #B1CF4D; border-radius: 50%; display: inline-block;
   }
   .chat-close {
-    background: none; border: none;
-    color: rgba(255,255,255,0.7);
-    cursor: pointer; font-size: 1.2rem;
-    padding: 4px; line-height: 1;
-    transition: color 0.2s;
+    background: none; border: none; cursor: pointer;
+    color: rgba(255,255,255,0.7); font-size: 1.2rem;
+    padding: 4px; line-height: 1; transition: color 0.2s;
   }
   .chat-close:hover { color: white; }
 
+  /* Mensajes */
   .chat-messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    flex: 1; overflow-y: auto; padding: 16px;
+    display: flex; flex-direction: column; gap: 10px;
     background: #f8faf9;
   }
   .chat-messages::-webkit-scrollbar { width: 4px; }
-  .chat-messages::-webkit-scrollbar-track { background: transparent; }
   .chat-messages::-webkit-scrollbar-thumb { background: #c0d8c8; border-radius: 4px; }
 
   .msg {
-    max-width: 85%;
-    padding: 10px 14px;
-    border-radius: 16px;
-    font-family: 'Geologica', sans-serif;
-    font-size: 0.85rem;
-    line-height: 1.5;
-    animation: msgIn 0.25s ease;
+    max-width: 85%; padding: 10px 14px; border-radius: 16px;
+    font-family: 'Geologica', sans-serif; font-size: 0.85rem; line-height: 1.5;
+    animation: msgIn 0.22s ease;
   }
   @keyframes msgIn {
-    from { opacity: 0; transform: translateY(8px); }
+    from { opacity: 0; transform: translateY(6px); }
     to   { opacity: 1; transform: translateY(0); }
   }
   .msg.bot {
-    background: white;
-    color: #1a2e22;
+    background: white; color: #1a2e22;
     border-bottom-left-radius: 4px;
     box-shadow: 0 1px 6px rgba(0,0,0,0.07);
     align-self: flex-start;
   }
   .msg.user {
     background: linear-gradient(135deg, #008556, #6CB741);
-    color: white;
-    border-bottom-right-radius: 4px;
+    color: white; border-bottom-right-radius: 4px;
     align-self: flex-end;
   }
 
-  .chat-suggestions {
-    padding: 0 16px 12px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    background: #f8faf9;
-  }
-  .suggestion {
-    background: white;
-    border: 1.5px solid #c8e0d0;
-    color: #008556;
-    font-family: 'Geologica', sans-serif;
-    font-size: 0.75rem;
-    font-weight: 500;
-    padding: 5px 12px;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .suggestion:hover {
-    background: #008556;
-    color: white;
-    border-color: #008556;
-  }
-
-  .chat-input-area {
-    padding: 12px 14px;
-    background: white;
-    border-top: 1px solid #e8f0eb;
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-  .chat-input {
-    flex: 1;
-    border: 1.5px solid #d0e8d8;
-    border-radius: 24px;
-    padding: 9px 16px;
-    font-family: 'Geologica', sans-serif;
-    font-size: 0.85rem;
-    color: #1a2e22;
-    outline: none;
-    transition: border-color 0.2s;
-    background: #f8faf9;
-  }
-  .chat-input:focus { border-color: #008556; background: white; }
-  .chat-input::placeholder { color: #9ab5a4; }
-  .chat-send {
-    width: 38px; height: 38px;
-    background: linear-gradient(135deg, #008556, #6CB741);
-    border: none; border-radius: 50%;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 2px 8px rgba(0,133,86,0.3);
-  }
-  .chat-send:hover { transform: scale(1.08); }
-  .chat-send svg { width: 16px; height: 16px; }
-
+  /* Typing indicator */
   .typing {
     display: flex; gap: 4px; align-items: center;
-    padding: 10px 14px;
-    background: white;
-    border-radius: 16px;
-    border-bottom-left-radius: 4px;
+    padding: 10px 14px; background: white;
+    border-radius: 16px; border-bottom-left-radius: 4px;
     box-shadow: 0 1px 6px rgba(0,0,0,0.07);
-    align-self: flex-start;
-    width: fit-content;
+    align-self: flex-start; width: fit-content;
   }
   .typing span {
-    width: 7px; height: 7px;
-    background: #B1CF4D;
-    border-radius: 50%;
-    animation: bounce 1.2s infinite;
+    width: 7px; height: 7px; background: #B1CF4D;
+    border-radius: 50%; animation: tBounce 1.2s infinite;
   }
   .typing span:nth-child(2) { animation-delay: 0.2s; }
   .typing span:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes bounce {
+  @keyframes tBounce {
     0%, 60%, 100% { transform: translateY(0); }
     30% { transform: translateY(-6px); }
   }
 
+  /* Sugerencias */
+  .chat-suggestions {
+    padding: 0 14px 12px; background: #f8faf9;
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .suggestion {
+    background: white; border: 1.5px solid #c8e0d0; color: #008556;
+    font-family: 'Geologica', sans-serif; font-size: 0.75rem; font-weight: 500;
+    padding: 5px 12px; border-radius: 20px; cursor: pointer; transition: all 0.18s;
+  }
+  .suggestion:hover { background: #008556; color: white; border-color: #008556; }
+
+  /* Input */
+  .chat-input-area {
+    padding: 12px 14px; background: white;
+    border-top: 1px solid #e8f0eb;
+    display: flex; gap: 8px; align-items: center;
+  }
+  .chat-input {
+    flex: 1; border: 1.5px solid #d0e8d8; border-radius: 24px;
+    padding: 9px 16px; font-family: 'Geologica', sans-serif;
+    font-size: 0.85rem; color: #1a2e22; outline: none;
+    background: #f8faf9; transition: border-color 0.2s;
+  }
+  .chat-input:focus { border-color: #008556; background: white; }
+  .chat-input::placeholder { color: #9ab5a4; }
+  .chat-send {
+    width: 38px; height: 38px; border-radius: 50%; border: none; cursor: pointer;
+    background: linear-gradient(135deg, #008556, #6CB741);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,133,86,0.3);
+    transition: transform 0.2s;
+  }
+  .chat-send:hover { transform: scale(1.08); }
+  .chat-send svg { width: 16px; height: 16px; }
+
   @media (max-width: 420px) {
     #chat-window { width: calc(100vw - 32px); right: 16px; bottom: 90px; }
-    #chat-btn { bottom: 20px; right: 16px; }
+    #chat-btn    { bottom: 20px; right: 16px; }
   }
 </style>
 
@@ -1034,7 +968,7 @@
 <div id="chat-bubble">¡Hola! 👋 ¿En qué te puedo ayudar?</div>
 
 <!-- Botón del chat -->
-<button id="chat-btn" onclick="toggleChat()" aria-label="Abrir chat de ayuda">
+<button id="chat-btn" onclick="toggleChat()" aria-label="Abrir asistente virtual">
   <svg id="chat-icon-open" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24">
     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
   </svg>
@@ -1049,9 +983,9 @@
     <div class="chat-header-avatar">🌿</div>
     <div class="chat-header-info">
       <div class="chat-header-name">Asistente ValorAgro</div>
-      <div class="chat-header-status">En línea</div>
+      <div class="chat-header-status">En línea · IA</div>
     </div>
-    <button class="chat-close" onclick="toggleChat()">✕</button>
+    <button class="chat-close" onclick="toggleChat()">&#x2715;</button>
   </div>
 
   <div class="chat-messages" id="chatMessages"></div>
@@ -1064,7 +998,9 @@
   </div>
 
   <div class="chat-input-area">
-    <input type="text" class="chat-input" id="chatInput" placeholder="Escribí tu consulta..." onkeydown="if(event.key==='Enter') sendMessage()">
+    <input type="text" class="chat-input" id="chatInput"
+      placeholder="Escribí tu consulta..."
+      onkeydown="if(event.key==='Enter') sendMessage()">
     <button class="chat-send" onclick="sendMessage()">
       <svg fill="none" stroke="white" stroke-width="2.5" viewBox="0 0 24 24">
         <path d="m22 2-11 11M22 2 15 22l-4-9-9-4 20-7z"/>
@@ -1074,147 +1010,111 @@
 </div>
 
 <script>
-// ── Base de conocimiento del FAQ ──────────────────────────────────────────
-const KB = [
-  // MI CUENTA
-  { keys: ["iniciar sesión","inicio sesion","login","ingresar","entrar","no puedo entrar","no me deja entrar"], resp: "Para iniciar sesión ingresá tu correo electrónico y contraseña, luego deslizá el botón verde. Si tenés biometría activada podés entrar con tu huella o reconocimiento facial directamente. 😊" },
-  { keys: ["biometria","biometría","huella","reconocimiento facial","face id"], resp: "Para activar la biometría, en la pantalla de login activá el botón <b>\"Habilitar inicio con biometría\"</b>. Así la próxima vez entrás sin escribir la contraseña." },
-  { keys: ["olvidé","olvide","olvidaste","recuperar contraseña","recuperar clave","no recuerdo"], resp: "En la pantalla de login tocá <b>\"¿Olvidaste tu contraseña? Recuperar ahora\"</b> y seguí los pasos indicados." },
-  { keys: ["cambiar contraseña","cambio de contraseña","cambiar clave","nueva contraseña"], resp: "Andá a <b>menú (☰) → Mis Datos → Seguridad → Cambiar contraseña</b>. La nueva contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial." },
-  { keys: ["alias","cvu","ver alias","ver cvu","donde esta mi cvu","datos publicos"], resp: "Tu Alias y CVU los encontrás en <b>menú (☰) → Mis Datos → Datos públicos</b>. Podés copiarlos, editar el Alias o compartirlos desde ahí." },
-  { keys: ["que es el cvu","para que sirve el cvu","cvu sirve"], resp: "El CVU es tu número de cuenta único de 22 dígitos para ValorAgro. Funciona como un CBU pero para billeteras virtuales — cualquiera te puede transferir usándolo desde cualquier banco o billetera del país." },
-  { keys: ["cerrar sesion","cerrar sesión","salir","logout"], resp: "Para cerrar sesión andá al <b>menú (☰)</b> y tocá <b>\"Cerrar sesión\"</b> al final del menú." },
+// URL del backend en Render — reemplazá con tu URL real después del deploy
+const CHAT_API_URL = "https://valoragro-bot.onrender.com/chat";
 
-  // SALDO
-  { keys: ["saldo afa","saldo cvu","diferencia saldo","saldo disponible"], resp: "El <b>Saldo AFA</b> son los fondos acreditados por Agricultores Federados Argentinos. El <b>Saldo CVU</b> son los fondos recibidos por transferencias desde otros bancos o billeteras. Ambos disponibles para operar." },
-  { keys: ["ocultar saldo","esconder saldo","no se vea el saldo"], resp: "Tocá el <b>ícono del ojo 👁</b> junto al Saldo AFA o CVU en la pantalla principal para ocultarlo. Tocalo de nuevo para mostrarlo." },
-  { keys: ["movimientos","historial","ver movimientos","mis movimientos","transacciones"], resp: "En la pantalla de inicio ves los últimos movimientos. Para el historial completo tocá <b>\"Ver más\"</b>. También podés filtrar por fecha con el ícono de filtro (≡)." },
-  { keys: ["limite","límite","limite diario","operaciones","limite de operaciones"], resp: "Para configurar el límite diario andá a <b>menú (☰) → Configuración → Límite de operaciones</b> y tocá el lápiz para modificarlo." },
-  { keys: ["pausar cvu","pausar","bloquear cvu","suspender cvu"], resp: "Podés pausar tu CVU desde <b>menú (☰) → Configuración → Acciones con mi CVU → Pausar CVU</b>. Esto desactiva temporalmente la recepción de transferencias." },
+let chatOpen    = false;
+let isBotTyping = false;
 
-  // TRANSFERENCIAS
-  { keys: ["transferir","como transfiero","hacer transferencia","enviar dinero","transferencia"], resp: "Tocá <b>\"Transferir\"</b> en el menú inferior. Podés buscar el destinatario por <b>Favoritos</b>, <b>Alias/CBU/CVU</b> o <b>Contactos</b>. Ingresá el dato, validá, confirmá los datos del titular y seguí para ingresar el monto." },
-  { keys: ["favorito","favoritos","guardar contacto","contacto frecuente"], resp: "Podés guardar favoritos al hacer una transferencia. También los gestionás en <b>Transferir → pestaña Favoritos</b>, donde aparecen contactos favoritos y destinatarios frecuentes." },
-  { keys: ["compartir alias","compartir cvu","compartir datos","dar mi cvu"], resp: "Desde <b>menú (☰) → Compartir Alias/CBU/CVU</b> o desde <b>Mis Datos → Datos públicos → \"Compartir datos\"</b>. Lo enviás por WhatsApp, mail o cualquier otra app." },
-  { keys: ["error transferencia","transferencia error","me equivoque","equivoque destinatario","transferencia mal"], resp: "Las transferencias son inmediatas e irreversibles automáticamente. Comunicate con soporte de inmediato por WhatsApp (341 668-5981) o mail (valoragro@afascl.coop) para que te asesoremos." },
-
-  // PAGOS QR
-  { keys: ["comprobante","descargar comprobante","guardar comprobante","constancia de pago"], resp: "Después de un pago aparece la pantalla <b>\"Detalle de pago realizado\"</b>. Tocá <b>\"Descargar\"</b> para guardar el comprobante o <b>\"Compartir\"</b> para enviarlo." },
-  { keys: ["pagos realizados","ver pagos","mis pagos","historial pagos"], resp: "Podés ver tus pagos en <b>Servicios → Pagos realizados</b> o en el historial de movimientos de la pantalla principal." },
-  { keys: ["qr","pago qr","pagar qr","escanear qr","código qr"], resp: "Para pagar con QR tocá <b>\"Ingresos\"</b> en el menú inferior y usá la opción de escanear el QR del comercio. ¿Tenés algún problema puntual con este proceso?" },
-
-  // SERVICIOS
-  { keys: ["servicios","que puedo pagar","pagar servicios","facturas"], resp: "Desde <b>Servicios</b> podés: <b>Pagar facturas</b> (escaneando o ingresando el código de barras), <b>Recargar celular</b> y ver <b>Pagos realizados</b>. Accedés desde el menú inferior o el menú (☰)." },
-  { keys: ["pagar factura","factura","código de barras","pago de servicios"], resp: "Andá a <b>Servicios → Pagar factura</b>. Elegí <b>\"Escanear código de barras\"</b> con la cámara o <b>\"Ingresar código de barras\"</b> para tipearlo manualmente." },
-  { keys: ["recargar celular","recarga","saldo celular","cargar celular"], resp: "Andá a <b>Servicios → Recargar celular</b> y seguí los pasos indicados. ¿Necesitás más ayuda con este proceso?" },
-
-  // SEGURIDAD
-  { keys: ["contraseña segura","requisitos contraseña","como tiene que ser la contraseña"], resp: "La contraseña debe tener al menos <b>8 caracteres</b>, incluir una mayúscula, una minúscula, un número y un carácter especial. Además debe ser diferente a las últimas 6 contraseñas usadas." },
-  { keys: ["me robaron","robo","perdí el celular","perdi el celular","bloquear cuenta"], resp: "⚠️ Communicate de inmediato con soporte para bloquear tu cuenta:<br>📱 WhatsApp: <b>341 668-5981</b><br>📧 Email: <b>valoragro@afascl.coop</b>" },
-  { keys: ["piden contraseña","estafa","phishing","me pidieron datos","sospechoso"], resp: "⚠️ <b>ValorAgro NUNCA te va a pedir tu contraseña</b> por WhatsApp, mail o llamada. Si alguien lo hace, es un intento de estafa. Comunicate con soporte de inmediato." },
-
-  // PROBLEMAS TÉCNICOS
-  { keys: ["app no carga","app no funciona","se cierra","falla la app","error en la app"], resp: "Probá cerrar la app completamente y volver a abrirla. Si tenés conexión a internet y sigue fallando, desinstalá y volvé a instalar la app. Si persiste, contactá soporte indicando tu dispositivo y sistema operativo." },
-  { keys: ["no aparece movimiento","pago no aparece","no se refleja","no se acredito","no se acreditó"], resp: "Los movimientos pueden demorar unos minutos. Cerrá y volvé a abrir la app. Si pasaron más de 30 minutos y sigue sin aparecer, contactá soporte con la fecha, hora y monto de la operación." },
-  { keys: ["notificacion rara","operacion que no hice","operación que no hice","me llegó una notificación"], resp: "Revisá tus notificaciones tocando la campana 🔔 en la pantalla de inicio. Si confirmás que es una operación que no hiciste, contactá soporte de inmediato." },
-
-  // CONTACTO
-  { keys: ["contacto","hablar con alguien","soporte","ayuda","no encuentro","no encontré"], resp: "Podés contactarnos por:<br>📱 <b>WhatsApp:</b> 341 668-5981<br>📧 <b>Email:</b> valoragro@afascl.coop<br>¡Te respondemos a la brevedad! 😊" },
-];
-
-const FALLBACK = "No encontré una respuesta exacta para eso. 🤔 Te recomiendo contactar directamente a soporte:<br>📱 <b>WhatsApp:</b> 341 668-5981<br>📧 <b>Email:</b> valoragro@afascl.coop";
-
-// ── Lógica del chat ──────────────────────────────────────────────────────
-let chatOpen = false;
-let bubbleHidden = false;
-
-// Ocultar burbuja después de 4 segundos
-setTimeout(() => {
-  const b = document.getElementById('chat-bubble');
+// Ocultar burbuja de bienvenida después de 4 s
+setTimeout(function() {
+  var b = document.getElementById('chat-bubble');
   b.style.opacity = '0';
-  setTimeout(() => b.style.display = 'none', 500);
-  bubbleHidden = true;
+  setTimeout(function() { b.style.display = 'none'; }, 500);
 }, 4000);
 
 function toggleChat() {
   chatOpen = !chatOpen;
-  const win = document.getElementById('chat-window');
-  const iconOpen = document.getElementById('chat-icon-open');
-  const iconClose = document.getElementById('chat-icon-close');
-  const bubble = document.getElementById('chat-bubble');
+  var win       = document.getElementById('chat-window');
+  var iconOpen  = document.getElementById('chat-icon-open');
+  var iconClose = document.getElementById('chat-icon-close');
+  document.getElementById('chat-bubble').style.display = 'none';
 
   if (chatOpen) {
     win.classList.add('open');
-    iconOpen.style.display = 'none';
+    iconOpen.style.display  = 'none';
     iconClose.style.display = 'block';
-    bubble.style.display = 'none';
     if (document.getElementById('chatMessages').children.length === 0) {
-      setTimeout(() => addBotMessage("¡Hola! 👋 Soy el asistente de <b>ValorAgro</b>. Puedo ayudarte con preguntas sobre la billetera. ¿En qué te puedo ayudar?"), 300);
+      appendBotMessage('¡Hola! 👋 Soy el asistente de <b>ValorAgro</b>. Puedo ayudarte con preguntas sobre la billetera. ¿En qué te puedo ayudar?');
     }
-    setTimeout(() => document.getElementById('chatInput').focus(), 400);
+    setTimeout(function() { document.getElementById('chatInput').focus(); }, 350);
   } else {
     win.classList.remove('open');
-    iconOpen.style.display = 'block';
+    iconOpen.style.display  = 'block';
     iconClose.style.display = 'none';
   }
 }
 
-function addBotMessage(text) {
-  const msgs = document.getElementById('chatMessages');
-  // Typing indicator
-  const typing = document.createElement('div');
+function appendBotMessage(html) {
+  var msgs = document.getElementById('chatMessages');
+  var div  = document.createElement('div');
+  div.className = 'msg bot';
+  div.innerHTML = html;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping() {
+  var msgs   = document.getElementById('chatMessages');
+  var typing = document.createElement('div');
   typing.className = 'typing';
+  typing.id        = 'va-typing';
   typing.innerHTML = '<span></span><span></span><span></span>';
   msgs.appendChild(typing);
   msgs.scrollTop = msgs.scrollHeight;
+  isBotTyping = true;
 
-  setTimeout(() => {
-    msgs.removeChild(typing);
-    const msg = document.createElement('div');
-    msg.className = 'msg bot';
-    msg.innerHTML = text;
-    msgs.appendChild(msg);
-    msgs.scrollTop = msgs.scrollHeight;
-  }, 700);
+  return function resolve(html) {
+    var t = document.getElementById('va-typing');
+    if (t) t.remove();
+    isBotTyping = false;
+    appendBotMessage(html);
+  };
 }
 
 function addUserMessage(text) {
-  const msgs = document.getElementById('chatMessages');
-  const msg = document.createElement('div');
-  msg.className = 'msg user';
-  msg.textContent = text;
-  msgs.appendChild(msg);
+  var msgs = document.getElementById('chatMessages');
+  var div  = document.createElement('div');
+  div.className   = 'msg user';
+  div.textContent = text;
+  msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
-  // Ocultar sugerencias después del primer mensaje
   document.getElementById('chatSuggestions').style.display = 'none';
 }
 
-function getResponse(input) {
-  const q = input.toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[¿?¡!]/g, "");
-
-  for (const item of KB) {
-    if (item.keys.some(k => q.includes(k.normalize("NFD").replace(/[\u0300-\u036f]/g, "")))) {
-      return item.resp;
-    }
+async function callAPI(text) {
+  var resolve = showTyping();
+  try {
+    var res  = await fetch(CHAT_API_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ message: text })
+    });
+    var data = await res.json();
+    resolve(data.reply || 'Lo siento, no pude procesar tu consulta.');
+  } catch(e) {
+    resolve(
+      'Hubo un problema de conexión. 😔 Contactanos directamente:<br>' +
+      '📱 <b>WhatsApp:</b> <a href="https://wa.me/5493416685981" target="_blank" style="color:#008556">341 668-5981</a><br>' +
+      '📧 <b>Email:</b> <a href="mailto:valoragro@afascl.coop" style="color:#008556">valoragro@afascl.coop</a>'
+    );
   }
-  return FALLBACK;
 }
 
 function sendMessage() {
-  const input = document.getElementById('chatInput');
-  const text = input.value.trim();
+  if (isBotTyping) return;
+  var input = document.getElementById('chatInput');
+  var text  = input.value.trim();
   if (!text) return;
   input.value = '';
   addUserMessage(text);
-  setTimeout(() => addBotMessage(getResponse(text)), 200);
+  callAPI(text);
 }
 
 function sendSuggestion(btn) {
-  const text = btn.textContent;
-  addUserMessage(text);
-  setTimeout(() => addBotMessage(getResponse(text)), 200);
+  if (isBotTyping) return;
+  addUserMessage(btn.textContent);
+  callAPI(btn.textContent);
 }
 </script>
 
