@@ -782,6 +782,10 @@
     });
     document.querySelectorAll('.faq-item').forEach(i => i.style.display = '');
     document.getElementById('noResults').style.display = 'none';
+        document.getElementById('noResults').style.display = 'none';
+    const first = [...document.querySelectorAll('.faq-group')].find(g => g.style.display !== 'none');
+    if (first && cat !== 'todas') first.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
   }
 
   function filterFAQ() {
