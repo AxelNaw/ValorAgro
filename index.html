@@ -1049,7 +1049,9 @@ function appendBotMessage(html) {
   var msgs = document.getElementById('chatMessages');
   var div  = document.createElement('div');
   div.className = 'msg bot';
-  div.innerHTML = html;
+     div.innerHTML = html
+     .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+     .replace(/\n/g, '<br>');;
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
 }
